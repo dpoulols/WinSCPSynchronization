@@ -5,72 +5,46 @@
 
 # Load WinSCP .NET assembly
 
-Add-Type -Path "C:\-\WinSCPnet.dll"
+Add-Type -Path "C:\-\WinSCP\WinSCPnet.dll"
 
 # Set up session options
 $sessionOptions = New-Object WinSCP.SessionOptions -Property @{
     Protocol = [WinSCP.Protocol]::Ftp
-    HostName = ""
-    UserName = ""
-    Password = ""
+    HostName = " "
+    UserName = " "
+    Password = " "
     FtpSecure = [WinSCP.FtpSecure]::Explicit
 }
 
-$remotePath = ""
-$testPath = "C:\test"
-$removeLocalPath = "C:\test\*except*"
 $session = New-Object WinSCP.Session
-$localPath = ""
-$exceptionFormat = "/*except*"
+
+$localPath = "C:\-\"
+$removeLocalPath = $localPath + "*except*"
+
+$remotePath = "/files/outgoing/channel-choice"
+$exceptionRemoteFormat = "/*except*"
 
 
-
-
-
-###########################         CODE
-###############################################################################
-##
-##
-##
-##
 
 try
 {
     # Connect
     $session.Open($sessionOptions)
 
-    try
-    {
-        $synchronizationResult = $session.SynchronizeDirectories([WinSCP.SynchronizationMode]::Remote, $localPath, $remotePath, $False, [WinSCP.SynchronizationCriteria]::Time)
-        $synchronizationResult.Check()
-        Write-Host "Added and updated files have been succesfully synchronized."
-    }
-    catch
-    {
-        Write-Host "An unplanned error happened during the synchronization, contact with administrator... "
-        Write-Host "Error: $($_.Exception.Message)"
-        exit 1
-    }
-    
-    try
-    {
-        Write-Host "Removing unnecessary files..."
-        $session.RemoveFiles($remotePath + $exceptionFormat)
+    $synchronizationResult = $session.SynchronizeDirectories(
+        [WinSCP.SynchronizationMode]::Remote, $localPath, $remotePath, $False, [WinSCP.SynchronizationCriteria]::Time)
+    $synchronizationResult.Check()
+    #Write-Host "Added and updated files have been succesfully synchronized."
 
-        Write-Host "Removing local unnecessary files.."
-        Remove-Item $removeLocalPath
-    }
-    catch
-    {
-        "Error trying to remove unnecessary files."
-        "Error: $($_.Exception.Message)"
-    }
+    $session.RemoveFiles($remotePath + $exceptionRemoteFormat)
+
+    #Remove-Item $removeLocalPath       ## Uncomment if want to delete unnecessary files of YOUR LOCAL DIRECTORY
 
     $session.quit
 }
 catch
 {
-    Write-Host "Error trying to open session: $($_.Exception.Message)"
+    Write-Host "Error : $($_.Exception.Message)"
 }
 finally
 {
